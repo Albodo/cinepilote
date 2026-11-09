@@ -163,6 +163,7 @@ tbody td {
   border-bottom: 1px solid var(--ligne);
   transition: opacity .3s, background .3s;
 }
+tbody tr { scroll-margin-top: 2.6rem; }
 tbody td:first-child { border-left: 1px solid var(--ligne); border-radius: 10px 0 0 10px; }
 tbody td:last-child  { border-right: 1px solid var(--ligne); border-radius: 0 10px 10px 0; }
 
@@ -196,13 +197,56 @@ tbody td:last-child  { border-right: 1px solid var(--ligne); border-radius: 0 10
   border-radius: 50%;
 }
 
+.notes li.intertitre { padding-left: 0; margin-top: .35rem; font-weight: 600; color: var(--rose); }
+.notes li.intertitre:first-child { margin-top: 0; }
+.notes li.intertitre::before { display: none; }
+.notes li.sous { margin-left: 1rem; font-size: .9rem; }
+.notes li.sous::before { width: .3rem; height: .3rem; top: .6em; border-color: var(--saumon); }
+.notes li.consigne { padding-left: 0; font-style: italic; color: var(--saumon); }
+.notes li.consigne::before { display: none; }
+.notes li.liens::before { display: none; }
+.notes li.consigne::first-letter { font-style: normal; }
+
+.lien {
+  display: inline-block;
+  margin: .1rem .3rem .1rem 0;
+  padding: 0 .5rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--rose);
+  text-decoration: none;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  user-select: text;
+}
+.lien:hover { border-color: var(--rose); }
+
+.animateur {
+  display: inline-block;
+  margin-top: .3rem;
+  font-size: .78rem;
+  color: var(--texte-dim);
+}
+.animateur::before { content: "🎙 "; }
+
+/* pauses, transitions et plans B */
+tr.pause td { background: transparent; border-top-style: dashed; border-bottom-style: dashed; }
+tr.pause td:first-child { border-left-style: dashed; }
+tr.pause td:last-child { border-right-style: dashed; }
+tr.pause .bloc-nom { font-size: .95rem; font-weight: 500; color: var(--texte-dim); }
+tr.pause .notes { font-size: .85rem; color: var(--texte-dim); }
+tr.backup td { background: transparent; border-top-style: dotted; border-bottom-style: dotted; opacity: .6; }
+tr.backup td:first-child { border-left-style: dotted; }
+tr.backup td:last-child { border-right-style: dotted; }
+tr.backup .bloc-num { color: var(--texte-dim); }
+tr.sous-bloc .bloc-nom { font-size: .98rem; }
+
 /* états selon l'horloge */
 tr.passe td { opacity: .35; }
 
 tr.actif td {
   background: rgba(232,112,90,.12);
   border-color: var(--corail);
-  box-shadow: 0 0 14px rgba(232,112,90,.18);
 }
 tr.actif .bloc-num { color: var(--blanc); }
 tr.actif .bloc-num::after {
@@ -345,6 +389,7 @@ tr.prochain .bloc-num::after { content: " · À SUIVRE"; color: var(--rose); }
   box-shadow: none;
   cursor: default;
 }
+.pad.vide::before { opacity: .035; }
 .pad.vide .nom { opacity: .5; font-weight: 400; text-shadow: none; }
 .pad.vide:active { transform: none; }
 
@@ -394,19 +439,90 @@ kbd {
      ✏️  CONTENU DE LA SEMAINE — c'est la seule partie à modifier
      ================================================================ -->
 <script>
+/*
+  Champs d'un bloc :
+    num       numéro du bloc (facultatif : sans numéro = pause, transition…)
+    nom       titre du bloc
+    qui       animateur·trice (facultatif)
+    debut/fin heures « HH:MM » (null = hors horaire, ex. plan B)
+    type      "pause" | "backup" | "sous-bloc" (facultatif, change l'apparence)
+    notes     une ligne par point. Préfixes spéciaux :
+                "# "  intertitre        "- "  sous-point (en retrait)
+                "! "  consigne de régie (italique)
+              Les adresses https://… deviennent des liens cliquables.
+*/
 const EMISSION = {
-  date: "Lundi 9 novembre 2026",
+  date: "Émission du 8 novembre",
   blocs: [
-    { nom: "Introduction",     debut: "15:00", fin: "15:01", notes: ["Mot de bienvenue", "Survol des sujets du jour"] },
-    { nom: "Chronique",        debut: "15:01", fin: "15:13", notes: ["Sujet de la chronique", "Invité·e : nom", "Extrait à faire jouer"] },
-    { nom: "Box office",       debut: "15:16", fin: "15:26", notes: ["Top 5 de la fin de semaine", "Surprise de la semaine"] },
-    { nom: "Critique",         debut: "15:29", fin: "15:40", notes: ["Film critiqué", "Cote finale"] },
-    { nom: "Sorties en salle", debut: "15:43", fin: "15:52", notes: ["Sorties de vendredi", "Coup de cœur québécois"] },
-    { nom: "Entrevue",         debut: "15:55", fin: "16:10", notes: ["Invité·e", "Trois questions clés"] },
-    { nom: "Quiz ciné",        debut: "16:13", fin: "16:23", notes: ["Question 1 / 2 / 3", "Prix à faire tirer"] },
-    { nom: "Agenda",           debut: "16:26", fin: "16:34", notes: ["Festivals et projections", "Ciné-clubs de Québec"] },
-    { nom: "Coup de cœur",     debut: "16:37", fin: "16:52", notes: ["Film de répertoire", "Pourquoi le (re)voir"] },
-    { nom: "Conclusion",       debut: "16:55", fin: "17:00", notes: ["Remerciements", "Teaser de la semaine prochaine"] },
+    { num: 1, nom: "Introduction", qui: "Alexandre", debut: "15:00", fin: "15:01", notes: [
+      "Salutation",
+      "Présentation des gens présents cette semaine",
+      "Informations importantes à mentionner (concours, acquisition, changement, etc.)",
+    ]},
+    { num: 2, nom: "Chronique libre", qui: "Stéphanie", debut: "15:01", fin: "15:13", notes: [
+      "Sujet",
+    ]},
+    { num: 3, nom: "Box office", qui: "Alexandre", debut: "15:13", fin: "15:16", notes: [
+      "# Box office nord-américain",
+      "- 1er : Godzilla Minus Zero",
+      "- 2e : The Cat in the Hat",
+      "- 3e : Drummer Boy",
+      "# Box office québécois",
+      "- 1er : Vous pouvez tout voir",
+      "- 2e : Gueule d’argile",
+      "- 3e : Hantée",
+    ]},
+    { num: 4, nom: "Actualités", qui: "Stéphanie", debut: "15:16", fin: "15:26", notes: [
+      "# Nouvelle 1",
+      "David Fincher va refaire équipe avec Trent Reznor et Atticus Ross pour la musique de son prochain film et certaines chaînes de cinémas vont bouder la sortie.",
+      "https://variety.com/2026/music/news/trent-reznor-atticus-ross-score-david-fincher-cliff-booth-1236938107/ https://deadline.com/2026/11/cinemarko-netflix-cliff-booth-theatrical-release-1237212191/",
+      "# Nouvelle 2",
+      "Dustin Hoffman révèle qu’il a détesté tourner dans The Graduate, le film qui l’a rendu célèbre.",
+      "https://variety.com/2026/film/news/dustin-hoffman-the-graduate-mike-nichols-1236937024/",
+      "# Nouvelle 3",
+      "Maya Hawke sera la vedette d’un film basé sur le jeu de cartes Magic: The Gathering.",
+      "https://variety.com/2026/film/news/maya-hawke-magic-the-gathering-movie-1236939687/",
+    ]},
+    { nom: "Transition vers la pause", type: "pause", debut: "15:26", fin: "15:27", notes: [
+      "Médias sociaux",
+      "Speakpipe.com/cinemoilou",
+      "Sujets au retour de la pause",
+    ]},
+    { nom: "Pause", type: "pause", debut: "15:27", fin: "15:30", notes: [
+      "Chut, c’est les annonces 🤫",
+    ]},
+    { num: 5, nom: "En reprise ou chronique libre", qui: "Tout le monde", debut: "15:30", fin: "15:40", notes: [
+      "# En reprise : I Shot Andy Warhol",
+      "Présentation : Stéphanie",
+      "Discussion",
+    ]},
+    { num: 6, nom: "Film de la semaine", qui: "Tout le monde", debut: "15:40", fin: "15:47", notes: [
+      "# Your mother 3x",
+      "Présentation : Alexandre",
+      "Discussion",
+    ]},
+    { num: 6, nom: "Film de la semaine", type: "sous-bloc", qui: "Tout le monde", debut: "15:47", fin: "15:56", notes: [
+      "# Wildwood",
+      "Présentation : Stéphanie",
+      "Discussion",
+    ]},
+    { num: 6, nom: "En backup", type: "backup", debut: null, fin: null, notes: [
+      "# Film",
+      "Présentation",
+      "Discussion",
+    ]},
+    { num: 7, nom: "Conclusion", qui: "Alexandre", debut: "15:56", fin: "15:57", notes: [
+      "! 🎚 Remettre le thème à 50 % de volume pendant qu’Alex parle",
+      "# Sorties du weekend",
+      "# Programmation Beaumont",
+      "Toutes les informations sur la page FB du Cinéma Beaumont",
+      "# Rappels",
+      "Speakpipe.com/Cinemoilou",
+      "Disponible sur Balado Québec, Spotify et Apple Podcast",
+      "Suivez-nous sur FB et IG",
+      "Letterboxd",
+      "Gab Paquet et …",
+    ]},
   ]
 };
 
@@ -494,16 +610,41 @@ $("date-emission").textContent = EMISSION.date || "";
 
 const lignes = EMISSION.blocs.map((b, i) => {
   const tr = document.createElement("tr");
+  if (b.type) tr.classList.add(b.type);
   tr.innerHTML = `
-    <td><span class="bloc-num">Bloc ${i + 1}</span><span class="bloc-nom"></span></td>
-    <td class="heure">${b.debut}</td>
-    <td class="heure">${b.fin}</td>
+    <td><span class="bloc-num"></span><span class="bloc-nom"></span><span class="animateur"></span></td>
+    <td class="heure">${b.debut || "—"}</td>
+    <td class="heure">${b.fin || "—"}</td>
     <td><ul class="notes"></ul><div class="suivi"></div></td>`;
+  tr.querySelector(".bloc-num").textContent = b.num ? `Bloc ${b.num}` : "";
   tr.querySelector(".bloc-nom").textContent = b.nom;
+  const anim = tr.querySelector(".animateur");
+  if (b.qui) anim.textContent = b.qui; else anim.remove();
+
   const ul = tr.querySelector(".notes");
-  (b.notes || []).forEach((n) => { const li = document.createElement("li"); li.textContent = n; ul.appendChild(li); });
+  (b.notes || []).forEach((n) => {
+    const li = document.createElement("li");
+    if (n.startsWith("# "))      { li.className = "intertitre"; n = n.slice(2); }
+    else if (n.startsWith("- ")) { li.className = "sous";       n = n.slice(2); }
+    else if (n.startsWith("! ")) { li.className = "consigne";   n = n.slice(2); }
+    /* les adresses web deviennent des liens courts (nom du site) */
+    n.split(/(https?:\/\/\S+)/).forEach((morceau) => {
+      if (/^https?:\/\//.test(morceau)) {
+        const a = document.createElement("a");
+        a.href = morceau; a.target = "_blank"; a.rel = "noopener";
+        a.className = "lien";
+        a.textContent = new URL(morceau).hostname.replace(/^www\./, "") + " ↗";
+        li.appendChild(a);
+      } else if (morceau.trim()) {
+        li.appendChild(document.createTextNode(morceau));
+      }
+    });
+    if (/^\s*(https?:\/\/\S+\s*)+$/.test(n)) li.className = "liens"; /* ligne de liens seulement : pas de puce */
+    ul.appendChild(li);
+  });
   $("lignes").appendChild(tr);
-  return { tr, suivi: tr.querySelector(".suivi"), debut: enMinutes(b.debut) * 60, fin: enMinutes(b.fin) * 60, b, i };
+  const sec = (h) => (h ? enMinutes(h) * 60 : NaN);
+  return { tr, suivi: tr.querySelector(".suivi"), debut: sec(b.debut), fin: sec(b.fin), b, i };
 });
 
 let dernierActif = -1;
@@ -548,7 +689,7 @@ function majHorloge() {
   const cible = actif || prochain;
   if (cible && cible.i !== dernierActif) {
     dernierActif = cible.i;
-    cible.tr.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    cible.tr.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 }
 majHorloge();
