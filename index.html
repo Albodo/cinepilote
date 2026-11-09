@@ -431,9 +431,97 @@ kbd {
   padding: 0 .35rem;
   color: var(--rose);
 }
+
+/* ================================================================
+   VERROU (mot de passe)
+   ================================================================ */
+body.verrouille > header,
+body.verrouille > main { visibility: hidden; }
+
+#verrou {
+  position: fixed; inset: 0; z-index: 100;
+  display: none;
+  align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(232,112,90,.10), transparent 60%),
+    var(--fond);
+}
+body.verrouille #verrou { display: flex; }
+
+#verrou form {
+  display: flex; flex-direction: column; align-items: center; gap: 1.4rem;
+  width: min(420px, 90vw);
+}
+#verrou .logo-c { width: 96px; height: 96px; }
+#verrou .titre { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+#verrou input {
+  width: 100%;
+  font: inherit; font-size: 1.2rem; text-align: center; letter-spacing: .2em;
+  color: var(--blanc);
+  background: var(--fond-2);
+  border: 2px solid var(--corail);
+  border-radius: 999px;
+  padding: .7rem 1.2rem;
+  outline: none;
+  box-shadow: 0 0 10px rgba(232,112,90,.35);
+}
+#verrou input:focus { box-shadow: 0 0 18px rgba(232,112,90,.6); }
+#verrou input::placeholder { color: var(--texte-dim); letter-spacing: .1em; }
+#verrou .erreur-mdp { min-height: 1.2em; font-size: .9rem; color: var(--saumon); }
+#verrou.secousse form { animation: secousse .35s; }
+@keyframes secousse { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 </style>
 </head>
-<body>
+<body class="verrouille">
+
+<!-- Écran de mot de passe -->
+<div id="verrou">
+  <form id="form-verrou" autocomplete="off">
+    <svg class="logo-c" viewBox="0 0 100 100" aria-hidden="true">
+      <g fill="none" stroke-width="5">
+        <path d="M85 25 A42 42 0 1 0 85 75" stroke="#e8705a"/>
+        <path d="M78 30 A33 33 0 1 0 78 70" stroke="#ee9a89"/>
+        <path d="M71 35 A24 24 0 1 0 71 65" stroke="#f6c8c0"/>
+        <path d="M64 40 A15 15 0 1 0 64 60" stroke="#fff4f1"/>
+      </g>
+    </svg>
+    <h1 class="titre">Cinémoilou</h1>
+    <input type="password" id="mdp" placeholder="Mot de passe" autofocus>
+    <div class="erreur-mdp" id="erreur-mdp"></div>
+  </form>
+</div>
+<script>
+/* Seule l'empreinte SHA-256 de « cinemoilou: » + mot de passe est stockée ici.
+   Pour changer le mot de passe, remplace EMPREINTE par le résultat de :
+   sha256("cinemoilou:" + nouveauMotDePasse) */
+const EMPREINTE = "3670dbc82d4b1650e9983af1649dc6e20af4da9e7d283780c4eddd93216c03af";
+
+(function () {
+  const deverrouiller = () => document.body.classList.remove("verrouille");
+  try { if (sessionStorage.getItem("cinepilote-ok") === EMPREINTE) deverrouiller(); } catch (e) {}
+
+  async function empreinte(texte) {
+    const octets = new TextEncoder().encode("cinemoilou:" + texte);
+    const h = await crypto.subtle.digest("SHA-256", octets);
+    return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  document.getElementById("form-verrou").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const champ = document.getElementById("mdp");
+    if ((await empreinte(champ.value)) === EMPREINTE) {
+      try { sessionStorage.setItem("cinepilote-ok", EMPREINTE); } catch (err) {}
+      deverrouiller();
+      champ.value = "";
+    } else {
+      const v = document.getElementById("verrou");
+      document.getElementById("erreur-mdp").textContent = "Mot de passe incorrect";
+      v.classList.remove("secousse"); void v.offsetWidth; v.classList.add("secousse");
+      champ.select();
+    }
+  });
+})();
+</script>
 
 <!-- ================================================================
      ✏️  CONTENU DE LA SEMAINE — c'est la seule partie à modifier
@@ -452,14 +540,18 @@ kbd {
               Les adresses https://… deviennent des liens cliquables.
 */
 const EMISSION = {
-  date: "Émission du 8 novembre",
+  date: "Émission du 15 novembre",
   blocs: [
     { num: 1, nom: "Introduction", qui: "Alexandre", debut: "15:00", fin: "15:01", notes: [
-      "Salutation",
-      "Présentation des gens présents cette semaine",
-      "Informations importantes à mentionner (concours, acquisition, changement, etc.)",
+      "Dieu merci, c'est enfin dimanche! Il est 15h et vous écoutez Cinémoilou sur CKRL 89,1, le magazine hebdomadaire de cinéma radiophonique recommandé par 9 professionnels sur 10 pour combattre la dépression saisonnière!",
+      "Alexandre Boutet Dorval au micro et je suis, comme d'habitude, entouré de la crème de la crème",
+      "Elle est ici semaine après semaine, la reine des chroniqueuses cinéma, Stéphanie Falardeau-Caron",
+      "! Moment conversationnel",
+      "Sa présence ajoute toujours un vernis de sérieux et de crédibilité à l'émission, vous l'attendiez, il est là, Olivier Bélanger",
+      "! Moment conversationnel",
+      "On est avec vous jusqu'à 16h, alors sans plus attendre, commençons ça!",
     ]},
-    { num: 2, nom: "Chronique libre", qui: "Stéphanie", debut: "15:01", fin: "15:13", notes: [
+    { num: 2, nom: "Chronique libre", qui: "Stéphanie", debut: "15:02", fin: "15:13", notes: [
       "Sujet",
     ]},
     { num: 3, nom: "Box office", qui: "Alexandre", debut: "15:13", fin: "15:16", notes: [
@@ -781,6 +873,7 @@ $("volume").addEventListener("input", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
+  if (document.body.classList.contains("verrouille")) return;
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === "Escape") { toutArreter(); return; }
   const i = TOUCHES.indexOf(e.code);
