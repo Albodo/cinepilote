@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinépilote · Cinémoilou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   IDENTITÉ CINÉMOILOU
+   ================================================================ */
+:root {
+  --fond:      #00302e;   /* vert profond de l'affiche */
+  --fond-2:    #012624;
+  --fond-3:    #053a37;
+  --corail:    #e8705a;   /* rangée 1 */
+  --saumon:    #ee9a89;   /* rangée 2 */
+  --rose:      #f6c8c0;   /* rangée 3 */
+  --blanc:     #fff4f1;   /* rangée 4 */
+  --texte:     #fbe9e5;
+  --texte-dim: rgba(251, 233, 229, .55);
+  --ligne:     rgba(238, 154, 137, .18);
+  --neon: 0 0 6px rgba(232,112,90,.55), 0 0 18px rgba(232,112,90,.35);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background:
+    radial-gradient(ellipse at 25% 40%, rgba(232,112,90,.07), transparent 60%),
+    var(--fond);
+  color: var(--texte);
+  font-family: "Jost", "Futura", "Century Gothic", "Segoe UI", sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ================================================================
+   EN-TÊTE
+   ================================================================ */
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding: .9rem 1.8rem;
+  border-bottom: 1px solid var(--ligne);
+  background: linear-gradient(180deg, var(--fond-2), transparent);
+}
+
+.logo-c { width: 46px; height: 46px; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(232,112,90,.7)); }
+
+.titre {
+  font-family: "Monoton", "Jost", sans-serif;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 2.6vw, 2.6rem);
+  letter-spacing: .04em;
+  line-height: 1;
+  background: linear-gradient(90deg, var(--corail), var(--saumon) 45%, var(--rose) 75%, var(--blanc));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgba(232,112,90,.55));
+}
+
+.station {
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--saumon);
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  padding: .3rem .9rem;
+}
+
+.statut {
+  margin-left: auto;
+  text-align: right;
+  font-size: .95rem;
+  color: var(--texte-dim);
+  line-height: 1.35;
+}
+.statut strong { color: var(--rose); font-weight: 600; }
+
+.horloge {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 600;
+  color: var(--blanc);
+  text-shadow: var(--neon);
+  min-width: 5.2ch;
+  text-align: right;
+}
+
+/* ================================================================
+   MISE EN PAGE : DEUX MOITIÉS
+   ================================================================ */
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+section {
+  min-height: 0;
+  padding: 1.2rem 1.8rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+}
+section + section { border-left: 1px solid var(--ligne); }
+
+.section-titre {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: .8rem;
+}
+.section-titre h2 {
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--saumon);
+}
+.section-titre span { font-size: .8rem; color: var(--texte-dim); }
+
+/* ================================================================
+   GAUCHE : DÉROULEMENT
+   ================================================================ */
+.deroulement {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ligne) transparent;
+}
+
+table { width: 100%; border-collapse: separate; border-spacing: 0 .35rem; }
+
+thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--fond);
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--texte-dim);
+  padding: .2rem .8rem .5rem;
+}
+
+tbody td {
+  background: rgba(255,255,255,.025);
+  padding: .55rem .8rem;
+  vertical-align: top;
+  border-top: 1px solid var(--ligne);
+  border-bottom: 1px solid var(--ligne);
+  transition: opacity .3s, background .3s;
+}
+tbody td:first-child { border-left: 1px solid var(--ligne); border-radius: 10px 0 0 10px; }
+tbody td:last-child  { border-right: 1px solid var(--ligne); border-radius: 0 10px 10px 0; }
+
+.col-bloc  { width: 24%; }
+.col-heure { width: 9%; }
+
+.bloc-num {
+  display: block;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--corail);
+}
+.bloc-nom { display: block; font-size: 1.1rem; font-weight: 600; line-height: 1.2; }
+
+.heure {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--rose);
+}
+
+.notes { list-style: none; font-size: .95rem; line-height: 1.35; }
+.notes li { position: relative; padding-left: 1rem; }
+.notes li::before {
+  content: "";
+  position: absolute; left: 0; top: .55em;
+  width: .4rem; height: .4rem;
+  border: 1.5px solid var(--corail);
+  border-radius: 50%;
+}
+
+/* états selon l'horloge */
+tr.passe td { opacity: .35; }
+
+tr.actif td {
+  background: rgba(232,112,90,.12);
+  border-color: var(--corail);
+  box-shadow: 0 0 14px rgba(232,112,90,.18);
+}
+tr.actif .bloc-num { color: var(--blanc); }
+tr.actif .bloc-num::after {
+  content: " · EN ONDES";
+  color: var(--corail);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+tr.actif .heure { color: var(--blanc); }
+
+tr.prochain td { border-color: rgba(246,200,192,.45); }
+tr.prochain .bloc-num::after { content: " · À SUIVRE"; color: var(--rose); }
+
+.barre {
+  height: 3px;
+  margin-top: .5rem;
+  background: rgba(255,255,255,.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.barre > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--corail), var(--rose));
+  box-shadow: 0 0 8px var(--corail);
+}
+.reste {
+  margin-top: .25rem;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--saumon);
+}
+
+@keyframes pulse { 50% { opacity: .35; } }
+
+/* ================================================================
+   DROITE : TABLEAU DE SONS
+   ================================================================ */
+.zone-sons {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.tableau {
+  /* carré qui remplit l'espace disponible */
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: clamp(6px, 1.4cqmin, 14px);
+}
+
+.pad {
+  --c: var(--corail);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid var(--c);
+  border-radius: 12px;
+  background: var(--fond-2);
+  color: var(--c);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 35%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--c) 18%, transparent);
+  transition: transform .08s, box-shadow .2s, background .2s;
+}
+/* les 5 colonnes reprennent le dégradé de l'affiche */
+.pad:nth-child(5n+1) { --c: var(--corail); }
+.pad:nth-child(5n+2) { --c: var(--saumon); }
+.pad:nth-child(5n+3) { --c: #f3b1a4; }
+.pad:nth-child(5n+4) { --c: var(--rose); }
+.pad:nth-child(5n+5) { --c: var(--blanc); }
+
+/* motif « C » rayé en filigrane */
+.pad::before {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  background: var(--motif) center / contain no-repeat;
+  opacity: .07;
+  pointer-events: none;
+}
+
+.pad:hover { box-shadow: 0 0 16px color-mix(in srgb, var(--c) 60%, transparent), inset 0 0 10px color-mix(in srgb, var(--c) 25%, transparent); }
+.pad:active { transform: scale(.96); }
+
+.pad .remplissage {
+  position: absolute;
+  left: 0; bottom: 0; width: 100%;
+  height: 0%;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--c) 20%, transparent));
+  pointer-events: none;
+}
+
+.pad .nom {
+  position: relative;
+  font-size: clamp(.75rem, 2.6cqmin, 1.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--c) 60%, transparent);
+  word-break: break-word;
+}
+
+.pad .touche {
+  position: absolute;
+  top: 6px; left: 8px;
+  font-size: clamp(.6rem, 1.6cqmin, .8rem);
+  font-weight: 600;
+  opacity: .55;
+}
+
+.pad .duree {
+  position: absolute;
+  bottom: 6px; right: 8px;
+  font-size: clamp(.6rem, 1.6cqmin, .8rem);
+  font-variant-numeric: tabular-nums;
+  opacity: .7;
+}
+
+.pad.joue {
+  background: color-mix(in srgb, var(--c) 18%, var(--fond-2));
+  box-shadow: 0 0 22px var(--c), inset 0 0 14px color-mix(in srgb, var(--c) 40%, transparent);
+}
+.pad.joue .nom { color: var(--blanc); }
+
+.pad.vide {
+  --c: rgba(238,154,137,.22);
+  border-style: dashed;
+  box-shadow: none;
+  cursor: default;
+}
+.pad.vide .nom { opacity: .5; font-weight: 400; text-shadow: none; }
+.pad.vide:active { transform: none; }
+
+.pad.erreur { --c: #8a4a40; }
+.pad.erreur .nom::after { content: "fichier introuvable"; display: block; font-size: .65em; text-transform: none; opacity: .8; margin-top: .3em; }
+
+/* contrôles sous le tableau */
+.controles {
+  margin-top: .9rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: .85rem;
+  color: var(--texte-dim);
+}
+.btn-stop {
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  font-size: .8rem;
+  color: var(--fond);
+  background: var(--corail);
+  border: 0;
+  border-radius: 999px;
+  padding: .55rem 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--neon);
+}
+.btn-stop:active { transform: scale(.97); }
+.controles label { display: flex; align-items: center; gap: .5rem; }
+.controles input[type=range] { accent-color: var(--corail); width: 140px; }
+.controles .aide { margin-left: auto; }
+kbd {
+  font: inherit;
+  font-size: .75rem;
+  border: 1px solid var(--ligne);
+  border-radius: 4px;
+  padding: 0 .35rem;
+  color: var(--rose);
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     ✏️  CONTENU DE LA SEMAINE — c'est la seule partie à modifier
+     ================================================================ -->
+<script>
+const EMISSION = {
+  date: "Lundi 9 novembre 2026",
+  blocs: [
+    { nom: "Introduction",     debut: "15:00", fin: "15:01", notes: ["Mot de bienvenue", "Survol des sujets du jour"] },
+    { nom: "Chronique",        debut: "15:01", fin: "15:13", notes: ["Sujet de la chronique", "Invité·e : nom", "Extrait à faire jouer"] },
+    { nom: "Box office",       debut: "15:16", fin: "15:26", notes: ["Top 5 de la fin de semaine", "Surprise de la semaine"] },
+    { nom: "Critique",         debut: "15:29", fin: "15:40", notes: ["Film critiqué", "Cote finale"] },
+    { nom: "Sorties en salle", debut: "15:43", fin: "15:52", notes: ["Sorties de vendredi", "Coup de cœur québécois"] },
+    { nom: "Entrevue",         debut: "15:55", fin: "16:10", notes: ["Invité·e", "Trois questions clés"] },
+    { nom: "Quiz ciné",        debut: "16:13", fin: "16:23", notes: ["Question 1 / 2 / 3", "Prix à faire tirer"] },
+    { nom: "Agenda",           debut: "16:26", fin: "16:34", notes: ["Festivals et projections", "Ciné-clubs de Québec"] },
+    { nom: "Coup de cœur",     debut: "16:37", fin: "16:52", notes: ["Film de répertoire", "Pourquoi le (re)voir"] },
+    { nom: "Conclusion",       debut: "16:55", fin: "17:00", notes: ["Remerciements", "Teaser de la semaine prochaine"] },
+  ]
+};
+
+/* Effets sonores : jusqu'à 25 (5 × 5). Ajoute le fichier dans « sons/ » puis une ligne ici. */
+const SONS = [
+  { nom: "2001",      fichier: "sons/BIT_2001.wav" },
+  { nom: "Fredo",     fichier: "sons/BIT_fredo.wav" },
+  { nom: "Inigo",     fichier: "sons/BIT_inigo.wav" },
+  { nom: "Star Trek", fichier: "sons/BIT_startrek.wav" },
+];
+</script>
+<!-- ================================================================ -->
+
+<header>
+  <svg class="logo-c" viewBox="0 0 100 100" aria-hidden="true">
+    <g fill="none" stroke-linecap="butt" stroke-width="5">
+      <path d="M85 25 A42 42 0 1 0 85 75" stroke="#e8705a"/>
+      <path d="M78 30 A33 33 0 1 0 78 70" stroke="#ee9a89"/>
+      <path d="M71 35 A24 24 0 1 0 71 65" stroke="#f6c8c0"/>
+      <path d="M64 40 A15 15 0 1 0 64 60" stroke="#fff4f1"/>
+    </g>
+  </svg>
+  <h1 class="titre">Cinémoilou</h1>
+  <span class="station">CKRL 89,1</span>
+  <div class="statut" id="statut"></div>
+  <div class="horloge" id="horloge">--:--</div>
+</header>
+
+<main>
+  <!-- GAUCHE -->
+  <section>
+    <div class="section-titre">
+      <h2>Déroulement</h2>
+      <span id="date-emission"></span>
+    </div>
+    <div class="deroulement" id="deroulement">
+      <table>
+        <thead>
+          <tr><th class="col-bloc">Bloc</th><th class="col-heure">Début</th><th class="col-heure">Fin</th><th>Contenu</th></tr>
+        </thead>
+        <tbody id="lignes"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DROITE -->
+  <section>
+    <div class="section-titre">
+      <h2>Effets sonores</h2>
+      <span id="compte-sons"></span>
+    </div>
+    <div class="zone-sons">
+      <div class="tableau" id="tableau"></div>
+    </div>
+    <div class="controles">
+      <button class="btn-stop" id="stop">■ Stop</button>
+      <label>Volume <input type="range" id="volume" min="0" max="1" step="0.05" value="1"></label>
+      <span class="aide"><kbd>1</kbd>–<kbd>B</kbd> jouer · <kbd>Échap</kbd> tout arrêter</span>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ================================================================
+   OUTILS
+   ================================================================ */
+const $ = (id) => document.getElementById(id);
+const enMinutes = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+const deuxChiffres = (n) => String(n).padStart(2, "0");
+const formatMS = (sec) => { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ":" + deuxChiffres(sec % 60); };
+
+/* Pour tester hors des heures d'émission : index.html?heure=15:05 */
+const heureTest = new URLSearchParams(location.search).get("heure");
+const decalage = heureTest ? (() => {
+  const n = new Date(), [h, m] = heureTest.split(":").map(Number);
+  const cible = new Date(n); cible.setHours(h, m, 0, 0);
+  return cible - n;
+})() : 0;
+const maintenant = () => new Date(Date.now() + decalage);
+
+/* ================================================================
+   DÉROULEMENT
+   ================================================================ */
+$("date-emission").textContent = EMISSION.date || "";
+
+const lignes = EMISSION.blocs.map((b, i) => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><span class="bloc-num">Bloc ${i + 1}</span><span class="bloc-nom"></span></td>
+    <td class="heure">${b.debut}</td>
+    <td class="heure">${b.fin}</td>
+    <td><ul class="notes"></ul><div class="suivi"></div></td>`;
+  tr.querySelector(".bloc-nom").textContent = b.nom;
+  const ul = tr.querySelector(".notes");
+  (b.notes || []).forEach((n) => { const li = document.createElement("li"); li.textContent = n; ul.appendChild(li); });
+  $("lignes").appendChild(tr);
+  return { tr, suivi: tr.querySelector(".suivi"), debut: enMinutes(b.debut) * 60, fin: enMinutes(b.fin) * 60, b, i };
+});
+
+let dernierActif = -1;
+
+function majHorloge() {
+  const d = maintenant();
+  const s = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  $("horloge").textContent = deuxChiffres(d.getHours()) + ":" + deuxChiffres(d.getMinutes()) + ":" + deuxChiffres(d.getSeconds());
+
+  let actif = null, prochain = null;
+  for (const l of lignes) {
+    if (s >= l.debut && s < l.fin) actif = l;
+    else if (s < l.debut && !prochain) prochain = l;
+  }
+
+  for (const l of lignes) {
+    l.tr.classList.toggle("passe", s >= l.fin);
+    l.tr.classList.toggle("actif", l === actif);
+    l.tr.classList.toggle("prochain", l === prochain && !actif);
+    if (l === actif) {
+      const pct = ((s - l.debut) / (l.fin - l.debut)) * 100;
+      l.suivi.innerHTML = `<div class="barre"><div style="width:${pct}%"></div></div><div class="reste">Reste ${formatMS(l.fin - s)}</div>`;
+    } else if (l.suivi.innerHTML) {
+      l.suivi.innerHTML = "";
+    }
+  }
+
+  const premier = lignes[0], dernier = lignes[lignes.length - 1];
+  let txt;
+  if (actif) {
+    txt = `En ondes : <strong>${actif.b.nom}</strong><br>Reste ${formatMS(actif.fin - s)}`;
+  } else if (prochain && s >= premier.debut) {
+    txt = `Pause musicale<br><strong>${prochain.b.nom}</strong> dans ${formatMS(prochain.debut - s)}`;
+  } else if (prochain) {
+    txt = `Début de l'émission<br>dans <strong>${formatMS(premier.debut - s)}</strong>`;
+  } else if (dernier) {
+    txt = `Émission terminée<br><strong>Merci !</strong>`;
+  }
+  $("statut").innerHTML = txt || "";
+
+  /* faire défiler jusqu'au bloc en cours */
+  const cible = actif || prochain;
+  if (cible && cible.i !== dernierActif) {
+    dernierActif = cible.i;
+    cible.tr.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+majHorloge();
+setInterval(majHorloge, 250);
+
+/* ================================================================
+   EFFETS SONORES
+   ================================================================ */
+const NB_CASES = 25;
+const TOUCHES = [
+  "Digit1","Digit2","Digit3","Digit4","Digit5",
+  "KeyQ","KeyW","KeyE","KeyR","KeyT",
+  "KeyA","KeyS","KeyD","KeyF","KeyG",
+  "KeyZ","KeyX","KeyC","KeyV","KeyB",
+  "Digit6","Digit7","Digit8","Digit9","Digit0",
+];
+const etiquette = (code) => code.replace("Digit", "").replace("Key", "");
+
+/* motif « C » rayé pour le filigrane des boutons */
+const motifSVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='none' stroke='white' stroke-width='5'><path d='M85 25 A42 42 0 1 0 85 75'/><path d='M78 30 A33 33 0 1 0 78 70'/><path d='M71 35 A24 24 0 1 0 71 65'/><path d='M64 40 A15 15 0 1 0 64 60'/></g></svg>`;
+document.documentElement.style.setProperty("--motif", `url("data:image/svg+xml,${encodeURIComponent(motifSVG)}")`);
+
+let volume = 1;
+const pads = [];
+
+for (let i = 0; i < NB_CASES; i++) {
+  const son = SONS[i];
+  const btn = document.createElement("button");
+  btn.className = "pad";
+  btn.innerHTML = `<div class="remplissage"></div><span class="touche">${etiquette(TOUCHES[i])}</span><span class="nom"></span><span class="duree"></span>`;
+
+  if (!son) {
+    btn.classList.add("vide");
+    btn.querySelector(".nom").textContent = "—";
+    btn.tabIndex = -1;
+    $("tableau").appendChild(btn);
+    pads.push(null);
+    continue;
+  }
+
+  btn.querySelector(".nom").textContent = son.nom;
+  const audio = new Audio(son.fichier);
+  audio.preload = "auto";
+  audio.addEventListener("loadedmetadata", () => { btn.querySelector(".duree").textContent = formatMS(audio.duration); });
+  audio.addEventListener("ended", () => arreter(pad));
+  audio.addEventListener("error", () => btn.classList.add("erreur"));
+
+  const pad = { btn, audio, remplissage: btn.querySelector(".remplissage") };
+  btn.addEventListener("click", () => basculer(pad));
+  $("tableau").appendChild(btn);
+  pads.push(pad);
+}
+
+$("compte-sons").textContent = `${SONS.length} / ${NB_CASES}`;
+
+function jouer(pad) {
+  pad.audio.currentTime = 0;
+  pad.audio.volume = volume;
+  pad.audio.play().catch(() => pad.btn.classList.add("erreur"));
+  pad.btn.classList.add("joue");
+}
+function arreter(pad) {
+  pad.audio.pause();
+  pad.audio.currentTime = 0;
+  pad.btn.classList.remove("joue");
+  pad.remplissage.style.height = "0%";
+}
+/* un clic lance le son ; un 2e clic pendant la lecture l'arrête */
+function basculer(pad) { pad.audio.paused ? jouer(pad) : arreter(pad); }
+function toutArreter() { pads.forEach((p) => p && arreter(p)); }
+
+/* jauge de lecture qui remplit le bouton */
+(function animer() {
+  for (const p of pads) {
+    if (p && !p.audio.paused && p.audio.duration) {
+      p.remplissage.style.height = (p.audio.currentTime / p.audio.duration) * 100 + "%";
+      p.btn.querySelector(".duree").textContent = "−" + formatMS(p.audio.duration - p.audio.currentTime);
+    } else if (p && p.audio.duration && p.audio.paused) {
+      p.btn.querySelector(".duree").textContent = formatMS(p.audio.duration);
+    }
+  }
+  requestAnimationFrame(animer);
+})();
+
+$("stop").addEventListener("click", toutArreter);
+$("volume").addEventListener("input", (e) => {
+  volume = Number(e.target.value);
+  pads.forEach((p) => p && (p.audio.volume = volume));
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === "Escape") { toutArreter(); return; }
+  const i = TOUCHES.indexOf(e.code);
+  if (i >= 0 && pads[i]) { e.preventDefault(); basculer(pads[i]); }
+});
+</script>
+</body>
+</html>
