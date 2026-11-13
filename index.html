@@ -241,6 +241,47 @@ tr.backup td:last-child { border-right-style: dotted; }
 tr.backup .bloc-num { color: var(--texte-dim); }
 tr.sous-bloc .bloc-nom { font-size: .98rem; }
 
+/* réorganisation : poignée, ajustement de durée, glisser-déposer */
+.outils-plan { display: flex; align-items: baseline; gap: .9rem; }
+#fin-prevue { color: var(--rose); font-variant-numeric: tabular-nums; }
+#reinit {
+  font: inherit; font-size: .75rem; font-weight: 600; letter-spacing: .05em;
+  color: var(--fond); background: var(--saumon);
+  border: 0; border-radius: 999px; padding: .2rem .7rem; cursor: pointer;
+}
+#reinit:hover { background: var(--rose); }
+
+.poignee {
+  float: right;
+  margin: -.15rem -.3rem 0 .4rem;
+  padding: .1rem .3rem;
+  font-size: 1.15rem; line-height: 1;
+  color: var(--saumon);
+  opacity: .3;
+  cursor: grab;
+  border-radius: 4px;
+}
+tr:hover .poignee { opacity: .9; }
+.poignee:hover { background: rgba(238,154,137,.12); }
+.poignee:active { cursor: grabbing; }
+
+.ajust { display: flex; align-items: center; gap: .2rem; margin-top: .4rem; }
+.ajust button {
+  width: 1.35rem; height: 1.35rem; padding: 0;
+  font: inherit; font-size: .95rem; line-height: 1;
+  color: var(--rose); background: transparent;
+  border: 1px solid var(--ligne); border-radius: 50%;
+  cursor: pointer;
+}
+.ajust button:hover { border-color: var(--corail); color: var(--blanc); background: rgba(232,112,90,.15); }
+.ajust button:active { transform: scale(.92); }
+.duree-bloc { min-width: 2.6ch; text-align: center; font-size: .78rem; color: var(--texte-dim); }
+.heure .modifie { color: var(--corail); }
+
+tr.glisse td { opacity: .35; }
+tr.drop-avant td { box-shadow: inset 0 3px 0 var(--corail); }
+tr.drop-apres td { box-shadow: inset 0 -3px 0 var(--corail); }
+
 /* chrono de chaque ligne */
 .chrono {
   display: block;
@@ -688,7 +729,7 @@ const SONS = [
   <section>
     <div class="section-titre">
       <h2>Déroulement</h2>
-      <span id="date-emission"></span>
+      <div class="outils-plan"><span id="date-emission"></span><span id="fin-prevue"></span><button id="reinit" hidden title="Revenir au déroulement d'origine">↺ Réinitialiser</button></div>
     </div>
     <div class="deroulement" id="deroulement">
       <table>
@@ -740,13 +781,13 @@ const maintenant = () => new Date(Date.now() + decalage);
    ================================================================ */
 $("date-emission").textContent = EMISSION.date || "";
 
-const lignes = EMISSION.blocs.map((b, i) => {
+const tous = EMISSION.blocs.map((b, i) => {
   const tr = document.createElement("tr");
   if (b.type) tr.classList.add(b.type);
   tr.innerHTML = `
-    <td><span class="bloc-num"></span><span class="bloc-nom"></span><span class="animateur"></span><span class="chrono"></span></td>
-    <td class="heure">${b.debut || "—"}</td>
-    <td class="heure">${b.fin || "—"}</td>
+    <td><span class="poignee" title="Glisser pour déplacer">⠿</span><span class="bloc-num"></span><span class="bloc-nom"></span><span class="animateur"></span><span class="chrono"></span></td>
+    <td class="heure"><span class="h-debut">${b.debut || "—"}</span>${b.debut ? '<div class="ajust"><button class="moins" title="Retirer 1 minute">−</button><span class="duree-bloc"></span><button class="plus" title="Ajouter 1 minute">+</button></div>' : ""}</td>
+    <td class="heure"><span class="h-fin">${b.fin || "—"}</span></td>
     <td><ul class="notes"></ul><div class="suivi"></div></td>`;
   tr.querySelector(".bloc-num").textContent = b.num ? `Bloc ${b.num}` : "";
   tr.querySelector(".bloc-nom").textContent = b.nom;
@@ -776,7 +817,133 @@ const lignes = EMISSION.blocs.map((b, i) => {
   });
   $("lignes").appendChild(tr);
   const sec = (h) => (h ? enMinutes(h) * 60 : NaN);
-  return { tr, suivi: tr.querySelector(".suivi"), chrono: tr.querySelector(".chrono"), debut: sec(b.debut), fin: sec(b.fin), b, i };
+  const debut = sec(b.debut), fin = sec(b.fin);
+  const duree = isNaN(debut) ? null : fin - debut;
+  return {
+    tr, b, i, debut, fin,
+    suivi: tr.querySelector(".suivi"), chrono: tr.querySelector(".chrono"),
+    celDebut: tr.querySelector(".h-debut"), celFin: tr.querySelector(".h-fin"), celDuree: tr.querySelector(".duree-bloc"),
+    debutOrig: debut, finOrig: fin, duree, dureeOrig: duree,
+  };
+});
+
+/* ================================================================
+   RÉORGANISATION : glisser-déposer + ajustement ±1 minute
+   Les heures sont recalculées à partir de l'heure de début de l'émission.
+   Chaque bloc garde son éventuel battement d'avant (ex. 15:01 → 15:02).
+   Les changements sont gardés dans le navigateur jusqu'à « Réinitialiser »
+   ou jusqu'à ce que le déroulement soit modifié dans ce fichier.
+   ================================================================ */
+let lignes = tous.slice();
+const planifie = (l) => l.duree !== null;
+const hhmm = (t) => deuxChiffres(Math.floor(t / 3600) % 24) + ":" + deuxChiffres(Math.floor(t / 60) % 60);
+
+{ let prec = null;
+  for (const l of tous) {
+    l.ecart = 0;
+    if (!planifie(l)) continue;
+    if (prec) l.ecart = Math.max(0, l.debutOrig - prec.finOrig);
+    prec = l;
+  }
+}
+const DEPART = Math.min(...tous.filter(planifie).map((l) => l.debutOrig));
+
+const CLE_PLAN = "cinepilote-plan";
+const SIGNATURE = (() => { let h = 5381; for (const c of JSON.stringify(EMISSION)) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return String(h); })();
+
+function sauvegarder(modifie) {
+  try {
+    if (!modifie) { localStorage.removeItem(CLE_PLAN); return; }
+    localStorage.setItem(CLE_PLAN, JSON.stringify({ sig: SIGNATURE, ordre: lignes.map((l) => l.i), durees: lignes.map((l) => l.duree) }));
+  } catch (e) {}
+}
+function restaurer() {
+  try {
+    const p = JSON.parse(localStorage.getItem(CLE_PLAN));
+    if (!p || p.sig !== SIGNATURE || p.ordre.length !== tous.length) return;
+    lignes = p.ordre.map((i) => tous[i]);
+    lignes.forEach((l, k) => { if (planifie(l) && p.durees[k] > 0) l.duree = p.durees[k]; });
+  } catch (e) {}
+}
+
+function recalculer() {
+  let t = DEPART, premier = true;
+  for (const l of lignes) {
+    if (!planifie(l)) continue;
+    if (!premier) t += l.ecart;
+    premier = false;
+    l.debut = t; l.fin = t + l.duree; t = l.fin;
+    l.celDebut.textContent = hhmm(l.debut);
+    l.celFin.textContent = hhmm(l.fin);
+    l.celDebut.classList.toggle("modifie", l.debut !== l.debutOrig);
+    l.celFin.classList.toggle("modifie", l.fin !== l.finOrig);
+    l.celDuree.textContent = Math.round(l.duree / 60) + "′";
+  }
+  lignes.forEach((l) => $("lignes").appendChild(l.tr));
+  const modifie = lignes.some((l, k) => l !== tous[k] || l.duree !== l.dureeOrig);
+  $("fin-prevue").textContent = "Fin " + hhmm(t);
+  $("reinit").hidden = !modifie;
+  sauvegarder(modifie);
+  majHorloge();
+}
+
+$("reinit").addEventListener("click", () => {
+  lignes = tous.slice();
+  tous.forEach((l) => (l.duree = l.dureeOrig));
+  recalculer();
+});
+
+/* boutons − / + */
+$("lignes").addEventListener("click", (e) => {
+  const btn = e.target.closest(".ajust button");
+  if (!btn) return;
+  const l = tous.find((x) => x.tr === btn.closest("tr"));
+  l.duree = Math.max(60, l.duree + (btn.classList.contains("plus") ? 60 : -60));
+  recalculer();
+});
+
+/* glisser-déposer (seulement depuis la poignée ⠿) */
+let glisse = null, cible = null;
+const effacerMarqueurs = () => tous.forEach((l) => l.tr.classList.remove("drop-avant", "drop-apres"));
+
+$("lignes").addEventListener("mousedown", (e) => {
+  const p = e.target.closest(".poignee");
+  if (p) p.closest("tr").draggable = true;
+});
+document.addEventListener("mouseup", () => tous.forEach((l) => (l.tr.draggable = false)));
+
+$("lignes").addEventListener("dragstart", (e) => {
+  glisse = tous.find((l) => l.tr === e.target.closest("tr"));
+  if (!glisse) return;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", glisse.b.nom);
+  requestAnimationFrame(() => glisse && glisse.tr.classList.add("glisse"));
+});
+$("lignes").addEventListener("dragover", (e) => {
+  if (!glisse) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  const tr = e.target.closest("tr");
+  effacerMarqueurs();
+  cible = null;
+  if (!tr || tr === glisse.tr) return;
+  const r = tr.getBoundingClientRect();
+  const apres = e.clientY > r.top + r.height / 2;
+  tr.classList.add(apres ? "drop-apres" : "drop-avant");
+  cible = { l: tous.find((l) => l.tr === tr), apres };
+});
+$("lignes").addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (glisse && cible) {
+    lignes = lignes.filter((l) => l !== glisse);
+    lignes.splice(lignes.indexOf(cible.l) + (cible.apres ? 1 : 0), 0, glisse);
+    recalculer();
+  }
+});
+$("lignes").addEventListener("dragend", () => {
+  effacerMarqueurs();
+  if (glisse) { glisse.tr.classList.remove("glisse"); glisse.tr.draggable = false; }
+  glisse = cible = null;
 });
 
 let dernierActif = -1;
@@ -809,7 +976,8 @@ function majHorloge() {
     if (l.chrono.innerHTML !== chrono) l.chrono.innerHTML = chrono;
   }
 
-  const premier = lignes[0], dernier = lignes[lignes.length - 1];
+  const avecHoraire = lignes.filter((l) => !isNaN(l.debut));
+  const premier = avecHoraire[0], dernier = avecHoraire[avecHoraire.length - 1];
   let txt;
   if (actif) {
     txt = `${actif.b.type === "pause" ? "Pause" : "En ondes"} : <strong>${actif.b.nom}</strong><br>Reste ${formatMS(actif.fin - s)}`;
@@ -829,7 +997,8 @@ function majHorloge() {
     cible.tr.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 }
-majHorloge();
+restaurer();
+recalculer();
 setInterval(majHorloge, 250);
 
 /* ================================================================
