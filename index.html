@@ -241,6 +241,27 @@ tr.backup td:last-child { border-right-style: dotted; }
 tr.backup .bloc-num { color: var(--texte-dim); }
 tr.sous-bloc .bloc-nom { font-size: .98rem; }
 
+/* chrono de chaque ligne */
+.chrono {
+  display: block;
+  margin-top: .35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rose);
+}
+.chrono:empty { display: none; }
+.chrono small {
+  margin-right: .4rem;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--texte-dim);
+}
+tr.actif .chrono { font-size: 1.6rem; color: var(--blanc); text-shadow: var(--neon); }
+tr.actif .chrono small { color: var(--corail); }
+
 /* états selon l'horloge */
 tr.passe td { opacity: .35; }
 
@@ -258,6 +279,9 @@ tr.actif .heure { color: var(--blanc); }
 
 tr.prochain td { border-color: rgba(246,200,192,.45); }
 tr.prochain .bloc-num::after { content: " · À SUIVRE"; color: var(--rose); }
+/* lignes sans numéro (transition, pause) : pas de « · » devant */
+tr.actif .bloc-num:empty::after { content: "EN ONDES"; }
+tr.prochain .bloc-num:empty::after { content: "À SUIVRE"; }
 
 .barre {
   height: 3px;
@@ -567,13 +591,18 @@ const EMISSION = {
     ]},
     { num: 4, nom: "Actualités", qui: "Stéphanie", debut: "15:16", fin: "15:26", notes: [
       "# Nouvelle 1",
+      "James Gunn, directeur des studios DC, est remercié par Skydance",  
+      "https://variety.com/2026/film/news/james-gunn-peter-safran-fired-dc-jeremy-latcham-1236943091/",
 
       "# Nouvelle 2",
+      "Un reboot de la comédie romantique You’ve Got Mail est en préparation chez Warner Bros",
+      "https://deadline.com/2026/11/youve-got-mail-redo-jason-orley-directing-warner-bros-1237218654/", 	
+
 
       "# Nouvelle 3",
 
     ]},
-    { nom: "Transition vers la pause", type: "pause", debut: "15:26", fin: "15:27", notes: [
+    { nom: "Transition vers la pause", debut: "15:26", fin: "15:27", notes: [
       "On va se diriger tranquillement vers la pause",
       "Vous pouvez retrouver Cinémoilou sur les réseaux sociaux, Facebook et Instagram",
       "Vous pouvez nous écouter sur Balado Québec, Spotify et Apple Podcast ainsi qu'en direct au 89,1 FM à Québec ou sur le site de CKRL tous les dimanche 15h",
@@ -587,19 +616,16 @@ const EMISSION = {
       "# La chronique d'Olivier",
     ]},
     { num: 6, nom: "Film de la semaine", qui: "Tout le monde", debut: "15:40", fin: "15:47", notes: [
-      "# Titre du film",
-      "Présentation : Qui?",
-      "Discussion",
+      "# Wild Horse Nine",
+      "Présentation : Alexandre",
     ]},
     { num: 6, nom: "Film de la semaine", type: "sous-bloc", qui: "Tout le monde", debut: "15:47", fin: "15:56", notes: [
-      "# Titre du film",
-      "Présentation : Qui?",
-      "Discussion",
+      "# Possible Love",
+      "Présentation : Stéphanie",
     ]},
     { num: 6, nom: "En backup", type: "backup", debut: null, fin: null, notes: [
-      "# Titre du film",
-      "Présentation : Qui?",
-      "Discussion",
+      "# Godzilla-0.0.",
+      "Présentation : Alexandre",
     ]},
     { num: 7, nom: "Conclusion", qui: "Alexandre", debut: "15:56", fin: "15:57", notes: [
       "! 🎚 Remettre le thème à 50 % de volume pendant qu’Alex parle",
@@ -711,7 +737,7 @@ const lignes = EMISSION.blocs.map((b, i) => {
   const tr = document.createElement("tr");
   if (b.type) tr.classList.add(b.type);
   tr.innerHTML = `
-    <td><span class="bloc-num"></span><span class="bloc-nom"></span><span class="animateur"></span></td>
+    <td><span class="bloc-num"></span><span class="bloc-nom"></span><span class="animateur"></span><span class="chrono"></span></td>
     <td class="heure">${b.debut || "—"}</td>
     <td class="heure">${b.fin || "—"}</td>
     <td><ul class="notes"></ul><div class="suivi"></div></td>`;
@@ -743,7 +769,7 @@ const lignes = EMISSION.blocs.map((b, i) => {
   });
   $("lignes").appendChild(tr);
   const sec = (h) => (h ? enMinutes(h) * 60 : NaN);
-  return { tr, suivi: tr.querySelector(".suivi"), debut: sec(b.debut), fin: sec(b.fin), b, i };
+  return { tr, suivi: tr.querySelector(".suivi"), chrono: tr.querySelector(".chrono"), debut: sec(b.debut), fin: sec(b.fin), b, i };
 });
 
 let dernierActif = -1;
@@ -765,16 +791,21 @@ function majHorloge() {
     l.tr.classList.toggle("prochain", l === prochain && !actif);
     if (l === actif) {
       const pct = ((s - l.debut) / (l.fin - l.debut)) * 100;
-      l.suivi.innerHTML = `<div class="barre"><div style="width:${pct}%"></div></div><div class="reste">Reste ${formatMS(l.fin - s)}</div>`;
+      l.suivi.innerHTML = `<div class="barre"><div style="width:${pct}%"></div></div>`;
     } else if (l.suivi.innerHTML) {
       l.suivi.innerHTML = "";
     }
+    /* chrono de chaque ligne : temps avant le début, ou temps restant si en cours */
+    let chrono = "";
+    if (l === actif)        chrono = `<small>reste</small>${formatMS(l.fin - s)}`;
+    else if (s < l.debut)   chrono = `<small>dans</small>${formatMS(l.debut - s)}`;
+    if (l.chrono.innerHTML !== chrono) l.chrono.innerHTML = chrono;
   }
 
   const premier = lignes[0], dernier = lignes[lignes.length - 1];
   let txt;
   if (actif) {
-    txt = `En ondes : <strong>${actif.b.nom}</strong><br>Reste ${formatMS(actif.fin - s)}`;
+    txt = `${actif.b.type === "pause" ? "Pause" : "En ondes"} : <strong>${actif.b.nom}</strong><br>Reste ${formatMS(actif.fin - s)}`;
   } else if (prochain && s >= premier.debut) {
     txt = `Pause musicale<br><strong>${prochain.b.nom}</strong> dans ${formatMS(prochain.debut - s)}`;
   } else if (prochain) {
